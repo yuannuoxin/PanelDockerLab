@@ -1,0 +1,53 @@
+配置文件 root.cnf
+
+[req]
+distinguished_name = dn
+x509_extensions = v3_ca
+prompt = no
+[dn]
+C=CN
+ST=Sichuan
+L=Nanchong
+O=MyEC RootCA
+CN=MyEC Root CA
+[v3_ca]
+basicConstraints = critical,CA:TRUE
+keyUsage = critical,keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out root.key
+openssl req -x509 -new -key root.key -sha256 -days 36500 -out root.crt -config root.cnf
+
+mkdir domain001
+cd domain001
+
+leaf_ext.conf
+
+subjectAltName = DNS:kpanel.003.mtt.qzz.io,IP:127.0.0.1
+basicConstraints = critical,CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:prime256v1 -out server.key
+
+server.cnf
+
+[req]
+distinguished_name = dn
+prompt = no
+
+[dn]
+C = CN
+ST = Sichuan
+L = Nanchong
+O = MyEC Site
+CN = kpanel.003.mtt.qzz.io
+
+openssl req -new -key server.key -out server.csr -config server.cnf
+
+openssl x509 -req -in server.csr -CA ../root.crt -CAkey ../root.key -CAcreateserial -days 36500 -sha256 -extfile leaf_ext.conf -out server.crt
+
+chrome://certificate-manager/localcerts/usercerts
+edge://certificate-manager/localcerts/usercerts
